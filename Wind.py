@@ -28,14 +28,14 @@ class WindSpeed:
 
     def wind_thread(self, *args):
         anemometer_radius = 9.0
-        ispeeds = [0.0 for i in range(10)]
+        ispeeds = [0.0 for i in range(60)]
         count = 0
         while True:
             time.sleep(1)
             self.ispeed = self.wind_clicks * math.pi * anemometer_radius * 1.18 * 0.036 # fudge factor 1.18, cm/s -> km/h
             self.wind_clicks = 0
-            self.gust = self.gust if self.gust > self.ispeed else self.ispeed
             ispeeds[count] = self.ispeed
+            self.gust = max(ispeeds)
             self.aspeed = math.fsum(ispeeds) / len(ispeeds)
             count = (count + 1) if (count + 1) < len(ispeeds) else 0
 
