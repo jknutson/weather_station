@@ -3,11 +3,11 @@ from gpiozero import Button
 import time
 from datetime import datetime
 
-RAIN_HOUR = 1
-RAIN_DAY = 2
-RAIN_WEEK = 3
-RAIN_MONTH = 4
-RAIN_YEAR = 5
+RAIN_HOUR = 'in/hr'
+RAIN_DAY = 'in/day'
+RAIN_WEEK = 'in/wk'
+RAIN_MONTH = 'in/mo'
+RAIN_YEAR = 'in/yr'
 
 class RainGauge:
     def __init__(self):
@@ -36,6 +36,6 @@ class RainGauge:
             limit = datetime.strptime(s, "%Y-%m-%d %H:%M").timestamp()
         
         clicks = filter(lambda x: x >= limit, self.count)
-        return len(list(clicks))
-
-
+        val = len(list(clicks)) * 0.011 # inches rain per click
+        data = {'rain': {'measurement': val, 'units': since}}
+        return data
