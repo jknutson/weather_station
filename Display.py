@@ -37,9 +37,13 @@ class Display:
         self.epd.Clear()
 
     def new_canvas(self, orientation):
-        layout = (self.epd.height, self.epd.width) if orientation == self.DISP_LAYOUT_LANDSCAPE else (self.epd.width, self.epd.height)
+        self.orientation = orientation
+        layout = self.get_canvas_size(self.orientation)
         self.Himage = Image.new('1', layout, 0xFF)  # 0xFF: clear the frame
         self.draw = ImageDraw.Draw(self.Himage)
+
+    def get_canvas_size(self, orientation):
+        return (self.epd.height, self.epd.width) if orientation == self.DISP_LAYOUT_LANDSCAPE else (self.epd.width, self.epd.height)
 
     def finish_drawing(self):
         self.epd.display(self.epd.getbuffer(self.Himage))
