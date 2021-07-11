@@ -3,7 +3,6 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
 import json
-#import thread
 
 class MQTTClient:
     def __init__(self, name, location, topic, broker_ip, port) -> None:
@@ -54,8 +53,3 @@ class MQTTClient:
         if rc == mqtt.MQTT_ERR_NO_CONN or rc == mqtt.MQTT_ERR_CONN_LOST:
             self.connected = 0
         return rc
-
-# client name'Weather station'
-# host, port 192.168.0.105, 1883
-# location 37.014835,-121.979731
-# topic weather/data
