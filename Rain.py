@@ -10,7 +10,7 @@ RAIN_MONTH = 4
 RAIN_YEAR = 5
 
 class RainGauge:
-    def __init__(self) -> None:
+    def __init__(self):
         self.reset()
         self.rain_speed_sensor = Button(6)
         self.rain_speed_sensor.when_pressed = self.rain_count
