@@ -1,7 +1,9 @@
+import sys
 from math import sin
 import time
 from datetime import datetime
 import socket
+import requests
 import MQTT
 import Display
 import BME280
@@ -126,7 +128,71 @@ def report_rain(rain, since, payload):
     rpt = rain.get_recent(since)
     payload.update({'rain_'+interval: rpt['rain']})
 
+def text_degrees(v):
+    return {
+        'N': 0, 'NNE': 22.5, 'NE': 45, 'ENE': 67.5,
+        'E': 90, 'ESE': 112.5, 'SE': 135, 'SSE': 157.5,
+        'S': 180, 'SSW': 202.5, 'SW': 225, 'WSW': 247.5,
+        'W': 270, 'WNW': 292.5, 'NW': 315, 'NNW': 337.5,
+        }[v]
+
+def kmh_mph(v):
+    return float(v) * 0.621371
+
+def c_f(v):
+    return float(v) * 1.8 + 32
+
+def hpa_inhg(v):
+    return float(v) / 33.863886666667
+
+def get_payload_value(payload, source, conversion):
+    value = payload
+    for index in source.split('/'):
+        try:
+            value = value[index]
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            print("get_payload_value: from " + source + ", bad index '" + index + "'")
+            print(value)
+            return 'error'
+    if conversion != '':
+        value = {
+            'text_degrees': text_degrees,
+            'kmh_mph': kmh_mph,
+            'c_f': c_f,
+            'hpa_inhg': hpa_inhg
+        }[conversion](value)
+    return value
+
+def send_wunderground_data(payload):
+    WUurl = "https://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?"
+    WU_creds = 'ID=KCASANTA3711&PASSWORD=UBuAHRYf'
+    date_str = "&dateutc=now"
+    action_str = "&action=updateraw"
+
+    WUurl += WU_creds + date_str + action_str
+    query = ''
+    for field in [
+            ('winddir', 'wind/direction', 'text_degrees'),  # [0-360 instantaneous wind direction]
+            ('windspeedmph', 'wind/average', 'kmh_mph'),    # [mph instantaneous wind speed]
+            ('windgustmph', 'wind/gust', 'kmh_mph'),        # [mph current wind gust, using software specific time period]
+            ('humidity', 'humidity/measurement', ''),       # [% outdoor humidity 0-100%]
+            ('tempf', 'temperature/measurement', 'c_f'),    # [F outdoor temperature]
+            ('rainin', 'rain_hr/measurement', ''),          # [rain inches over the past hour)] -- the accumulated rainfall in the past 60 min
+            ('dailyrainin', 'rain_day/measurement', ''),    # [rain inches so far today in local time]
+            ('baromin', 'pressure/measurement', 'hpa_inhg') # [barometric pressure inches]
+        ]:
+        parm, source, conversion = field
+        val = get_payload_value(payload, source, conversion)
+        query += '&' + parm + '=' + str(val)
+    WUurl += query
+    print("Send data to WU: " + WUurl)
+    r = requests.get(WUurl)
+    print("Received " + str(r.status_code) + " " + str(r.text))
+
+
 # Boot section
+
 host = get_ip()
 
 boot_message(display, ' Booting...')
@@ -150,6 +216,7 @@ publish_status({
 })
 boot_message(display, ' Online')
 
+
 # Online
 count = 0
 while True:
@@ -164,13 +231,17 @@ while True:
 
     # Update display every minute
     if count % 6 == 0:
-        temp = float(payload['temperature']['measurement']) * 1.8 + 32.0 # convert °C to °F
+        temp = c_f(float(payload['temperature']['measurement']))
         hum = float(payload['humidity']['measurement'])
-        bp = float(payload['pressure']['measurement']) / 33.863886666667 # convert hPa to in/hg
+        bp = hpa_inhg(float(payload['pressure']['measurement']))
         wind = payload['wind']['direction']
-        speed = float(payload['wind']['average']) * 0.621371 # convert km/h to mph
-        gust = float(payload['wind']['gust']) * 0.621371 # convert km/h to mph
+        speed = kmh_mph(float(payload['wind']['average']))
+        gust = kmh_mph(float(payload['wind']['gust']))
         precip = float(payload['rain_day']['measurement'])
         display_update(display, temp, hum, bp, wind, speed, gust, precip)
+
+    # Report to Weather Underground every 10 minutes
+    if count % 60 == 0:
+        send_wunderground_data(payload)
 
     count += 1
