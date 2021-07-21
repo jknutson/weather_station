@@ -16,7 +16,7 @@ my_font = display.font24
 line_spacing = 26
 
 # MQTT clients
-station_name = 'WeatherStation'
+station_name = 'CastleWeather'
 ws_location = '37.014835,-121.979731'
 topic_data = 'weather/data'
 mqtt_data = MQTT.MQTTClient(station_name, ws_location, topic_data, '192.168.0.105', 1883)
@@ -63,12 +63,13 @@ def boot_message(display, message):
     global my_font
     global line_spacing
     global host
+    global station_name
 
     booting_date = datetime.now().strftime('%Y-%m-%d')
     booting_time = datetime.now().strftime('%H:%M:%S')
     coords = [0, 0]
     display.new_canvas(display.DISP_LAYOUT_PORTRAIT)
-    display.draw.text(tuple(coords), 'WeatherStation', font=my_font, fill=0)
+    display.draw.text(tuple(coords), station_name, font=my_font, fill=0)
     coords[1] += line_spacing
     display.draw.text(tuple(coords), message, font=my_font, fill=0)
     coords[1] += line_spacing
@@ -84,10 +85,11 @@ def display_update(display, temp, hum, bp, wind, speed, gust, rain):
     global my_font
     global line_spacing
     global host
+    global station_name
 
     coords = [0, 0]
     display.new_canvas(display.DISP_LAYOUT_PORTRAIT)
-    display.draw.text(tuple(coords), 'WeatherStation', font=my_font, fill=0)
+    display.draw.text(tuple(coords), station_name, font=my_font, fill=0)
     coords[1] += line_spacing
     display.draw.text(tuple(coords), datetime.now().strftime('%Y-%m-%d'), font=my_font, fill=0)
     coords[1] += line_spacing
@@ -187,8 +189,11 @@ def send_wunderground_data(payload):
         query += '&' + parm + '=' + str(val)
     WUurl += query
     print("Send data to WU: " + WUurl)
-    r = requests.get(WUurl)
-    print("Received " + str(r.status_code) + " " + str(r.text))
+    try:
+        r = requests.get(WUurl)
+        print("Received " + str(r.status_code) + " " + str(r.text))
+    except:
+        print("Unable to send info at this time.")
 
 
 # Boot section
