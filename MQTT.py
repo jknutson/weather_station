@@ -48,8 +48,11 @@ class MQTTClient:
         payload_str = json.dumps(jsonwrapper)
         if self.connected == 0:
             self.start()
-        mi = self.client.publish(topic, payload_str)
-        rc = mi.rc
+        try:
+            mi = self.client.publish(topic, payload_str)
+            rc = mi.rc
+        except:
+            rc = mqtt.MQTT_ERR_CONN_LOST
         if rc == mqtt.MQTT_ERR_NO_CONN or rc == mqtt.MQTT_ERR_CONN_LOST:
             self.connected = 0
         return rc
