@@ -168,7 +168,7 @@ def get_payload_value(payload, source, conversion):
 
 def send_wunderground_data(payload):
     WUurl = "https://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?"
-    WU_creds = 'ID=KCASANTA3711&PASSWORD=UBuAHRYf'
+    WU_creds = 'ID=XXXXXXXXXXXX&PASSWORD=XXXXXXXX'
     date_str = "&dateutc=now"
     action_str = "&action=updateraw"
 
