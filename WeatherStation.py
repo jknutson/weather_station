@@ -1,5 +1,5 @@
 #!/usr/bin/python3 -u
-import os, sys, time
+import json, os, sys, time
 import requests, socket
 from math import sin
 from datetime import datetime
@@ -237,6 +237,7 @@ def mq_publish(payload):
     mq_client.publish("{}/wind_speed_gust_mph".format(mq_topic_base), payload=payload['wind']['gust_mph'])
     mq_client.publish("{}/rain_in_hr".format(mq_topic_base), payload=payload['rain_hr']['measurement'])
     mq_client.publish("{}/rain_in_day".format(mq_topic_base), payload=payload['rain_day']['measurement'])
+    mq_client.publish("{}/readings_json".format(mq_topic_base), payload=json.dumps(payload))
 
 # Boot section
 
