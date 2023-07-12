@@ -232,6 +232,9 @@ def mq_publish(payload):
     mq_client.publish("{}/wind_speed_kmh".format(mq_topic_base), payload=payload['wind']['speed'])
     mq_client.publish("{}/wind_speed_avg_kmh".format(mq_topic_base), payload=payload['wind']['average'])
     mq_client.publish("{}/wind_speed_gust_kmh".format(mq_topic_base), payload=payload['wind']['gust'])
+    mq_client.publish("{}/wind_speed_mph".format(mq_topic_base), payload=payload['wind']['speed_mph'])
+    mq_client.publish("{}/wind_speed_avg_mph".format(mq_topic_base), payload=payload['wind']['average_mph'])
+    mq_client.publish("{}/wind_speed_gust_mph".format(mq_topic_base), payload=payload['wind']['gust_mph'])
     mq_client.publish("{}/rain_in_hr".format(mq_topic_base), payload=payload['rain_hr']['measurement'])
     mq_client.publish("{}/rain_in_day".format(mq_topic_base), payload=payload['rain_day']['measurement'])
 
