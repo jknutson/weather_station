@@ -162,6 +162,10 @@ def report_rain(rain, since, payload):
     rpt = rain.get_recent(since)
     payload.update({'rain_'+interval: rpt['rain']})
 
+def report_sky(sky, payload):
+    payload.update({'sky':sky, payload)
+
+
 def text_degrees(v):
     return {
         'N': 0, 'NNE': 22.5, 'NE': 45, 'ENE': 67.5,
@@ -259,6 +263,7 @@ if BME680_ENABLED:
 wind_speed = Wind.WindSpeed()
 wind_direction = Wind.WindDirection()
 rain = Rain.RainGauge()
+sky = Sky.Sky()
 
 publish_status({
     station_name: {
@@ -281,6 +286,7 @@ while True:
     report_wind(wind_speed, wind_direction, payload)
     report_rain(rain, Rain.RAIN_HOUR, payload)
     report_rain(rain, Rain.RAIN_DAY, payload)
+    report_sky(sky, payload)
     # pprint for testing
     # import pprint
     # pp = pprint.PrettyPrinter(indent=2)
