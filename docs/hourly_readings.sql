@@ -43,44 +43,44 @@ CREATE OR REPLACE FUNCTION public.wm_update_hourly_summaries(
 AS $BODY$
 
 -- TEMPERATURE
-INSERT INTO wm_hourly_readings (id, station, hour, avg_temperature)
+INSERT INTO wm_hourly_readings (id, hour, station, avg_temperature)
 SELECT
 	SPLIT_PART(topic, '/', 2)||'_'||to_char(date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt'), 'YYYYMMDDHH24') as id,
-  SPLIT_PART(topic, '/', 2) as station,
 	date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') as hour,
+	SPLIT_PART(topic, '/', 2) as station,
 	avg(text::float) AS avg_temperature
 FROM journal
 WHERE 
 	topic = 'iot/pico/temperature_avg'
 	AND text::float < 118 AND text::float > -118 -- weed out outliers/erroneous readings
 	AND date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') = date_trunc('hour', current_timestamp AT TIME ZONE 'cdt' - INTERVAL '1 hour')-- previous hour
-GROUP BY 1,2
+GROUP BY 1,2,3
 ORDER BY 1,2
 ON CONFLICT(id, hour)
 DO UPDATE
 SET avg_temperature = EXCLUDED.avg_temperature;
 
 -- HUMIDITY
-INSERT INTO wm_hourly_readings (id, station, hour, avg_humidity)
+INSERT INTO wm_hourly_readings (id, hour, station, avg_humidity)
 SELECT
 	SPLIT_PART(topic, '/', 2)||'_'||to_char(date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt'), 'YYYYMMDDHH24') as id,
-  SPLIT_PART(topic, '/', 2) as station,
 	date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') as hour,
+	SPLIT_PART(topic, '/', 2) as station,
 	avg(text::float) AS avg_humidity
 FROM journal
 WHERE 
 	topic = 'iot/pico/humidity_avg'
 	AND text::float < 118 AND text::float > -118 -- weed out outliers/erroneous readings
 	AND date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') = date_trunc('hour', current_timestamp AT TIME ZONE 'cdt' - INTERVAL '1 hour')-- previous hour
-GROUP BY 1,2 ORDER BY 1,2
+GROUP BY 1,2,3 ORDER BY 1,2
 ON CONFLICT(id, hour) DO UPDATE SET avg_humidity = EXCLUDED.avg_humidity;
 
 -- WIND AND RAIN
-INSERT INTO wm_hourly_readings (id, station, hour, rainfall_hour, rain_day, wind_speed_avg_mph, wind_speed_gust_mph, wind_speed_direction)
+INSERT INTO wm_hourly_readings (id, hour, station, rainfall_hour, rainfall_day, wind_speed_avg_mph, wind_speed_gust_mph, wind_speed_direction)
 SELECT
 	SPLIT_PART(topic, '/', 2)||'_'||to_char(date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt'), 'YYYYMMDDHH24') as id,
-  SPLIT_PART(topic, '/', 2) as station,
 	date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') as hour,
+	SPLIT_PART(topic, '/', 2) as station,
 	max((data->'rain_hr'->'measurement')::float) AS rainfall_hour,
 	max((data->'rain_day'->'measurement')::float) AS rainfall_day,
 	max((data->'wind'->'speed_mph')::float) AS wind_speed_avg_mph,
@@ -91,7 +91,7 @@ WHERE
 	topic = 'iot/pico/readings_json'
 	--AND data->'wind' IS NOT null
 	AND date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') = date_trunc('hour', current_timestamp AT TIME ZONE 'cdt' - INTERVAL '1 hour')-- previous hour
-GROUP BY 1,2 ORDER BY 1,2
+GROUP BY 1,2,3 ORDER BY 1,2
 ON CONFLICT(id, hour) DO UPDATE SET
   rainfall_hour = EXCLUDED.rainfall_hour,
   rainfall_day = EXCLUDED.rainfall_day,
@@ -107,4 +107,10 @@ select mode() WITHIN GROUP (ORDER BY data->'wind'->'direction') AS wind_speed_di
 select * from journal where left(topic,3)='iot' order by journal_id desc limit 15;
 select data->'wind'->'direction' from journal where left(topic,3)='iot'  and data->'wind' is not null order by journal_id desc limit 15;
 SELECT * FROM wm_hourly_readings order by hour desc limit 2;
+BEGIN;
+UPDATE wm_hourly_readings SET station='pico' WHERE LEFT(id, 4) = 'pico';
+UPDATE wm_hourly_readings SET station='esp32_58EA84-28ffc69ca4160514' WHERE station is null;
+COMMIT;
+SELECT * FROM wm_hourly_readings WHERE station is null;
+SELECT * FROM wm_hourly_readings WHERE LEFT(id, 4) = 'pico';
 */
