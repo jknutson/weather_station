@@ -57,3 +57,18 @@ SELECT (current_date - INTERVAL '2 month')::date AS month_ago_date;
 CREATE OR REPLACE VIEW public.wm_readings_24_hours AS
 SELECT id, hour, avg_temperature, avg_humidity, wind_speed_gust_mph, wind_speed_avg_mph, replace(wind_speed_direction, '"', '') as wind_speed_direction, rainfall_hour, rainfall_day
 	FROM public.wm_hourly_readings order by hour desc limit 24;
+
+/* dewpoint stuff */
+
+CREATE OR REPLACE FUNCTION dewpoint(temperature float, humidity float) RETURNS float AS $$
+        BEGIN
+                RETURN 243.04*(ln(humidity/100)+((17.625*temperature)/(243.04+temperature)))/(17.625-ln(humidity/100)-((17.625*temperature)/(243.04+temperature)));
+        END;
+$$ LANGUAGE plpgsql;
+
+
+select
+avg_temperature, avg_humidity,
+243.04*(ln(avg_humidity/100)+((17.625*avg_temperature)/(243.04+avg_temperature)))/(17.625-ln(avg_humidity/100)-((17.625*avg_temperature)/(243.04+avg_temperature))) as dewpoint
+,dewpoint(avg_temperature, avg_humidity) as dewpoint_fn
+from wm_latest_readings;
