@@ -13,6 +13,7 @@ if BME680_ENABLED:
     import BME680
 import Rain
 import Wind
+import Sky
 
 # TODO: add support for 1602 LCD
 DISPLAY_ENABLED = False
@@ -163,7 +164,7 @@ def report_rain(rain, since, payload):
     payload.update({'rain_'+interval: rpt['rain']})
 
 def report_sky(sky, payload):
-    payload.update({'sky':sky, payload)
+    payload.update({'sky':sky})
 
 
 def text_degrees(v):
