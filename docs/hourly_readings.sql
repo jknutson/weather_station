@@ -8,11 +8,13 @@ wind_speed_gust_mph float,
 wind_speed_avg_mph float,
 wind_speed_direction varchar(5),
 rainfall_hour float,
-rainfall_day float
+rainfall_day float,
+station varchar(50)
 );
 
 create unique index idx_wm_hourly_readings_id on wm_hourly_readings (id);
 create unique index idx_wm_hourly_readings_id_hour on wm_hourly_readings (id, hour);
+alter table wm_hourly_readings add column station varchar(50);
 */
 
 /*
@@ -41,9 +43,10 @@ CREATE OR REPLACE FUNCTION public.wm_update_hourly_summaries(
 AS $BODY$
 
 -- TEMPERATURE
-INSERT INTO wm_hourly_readings (id, hour, avg_temperature)
+INSERT INTO wm_hourly_readings (id, station, hour, avg_temperature)
 SELECT
 	SPLIT_PART(topic, '/', 2)||'_'||to_char(date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt'), 'YYYYMMDDHH24') as id,
+  SPLIT_PART(topic, '/', 2) as station,
 	date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') as hour,
 	avg(text::float) AS avg_temperature
 FROM journal
@@ -58,9 +61,10 @@ DO UPDATE
 SET avg_temperature = EXCLUDED.avg_temperature;
 
 -- HUMIDITY
-INSERT INTO wm_hourly_readings (id, hour, avg_humidity)
+INSERT INTO wm_hourly_readings (id, station, hour, avg_humidity)
 SELECT
 	SPLIT_PART(topic, '/', 2)||'_'||to_char(date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt'), 'YYYYMMDDHH24') as id,
+  SPLIT_PART(topic, '/', 2) as station,
 	date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') as hour,
 	avg(text::float) AS avg_humidity
 FROM journal
@@ -72,9 +76,10 @@ GROUP BY 1,2 ORDER BY 1,2
 ON CONFLICT(id, hour) DO UPDATE SET avg_humidity = EXCLUDED.avg_humidity;
 
 -- WIND AND RAIN
-INSERT INTO wm_hourly_readings (id, hour, rainfall_hour, rain_day, wind_speed_avg_mph, wind_speed_gust_mph, wind_speed_direction)
+INSERT INTO wm_hourly_readings (id, station, hour, rainfall_hour, rain_day, wind_speed_avg_mph, wind_speed_gust_mph, wind_speed_direction)
 SELECT
 	SPLIT_PART(topic, '/', 2)||'_'||to_char(date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt'), 'YYYYMMDDHH24') as id,
+  SPLIT_PART(topic, '/', 2) as station,
 	date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') as hour,
 	max((data->'rain_hr'->'measurement')::float) AS rainfall_hour,
 	max((data->'rain_day'->'measurement')::float) AS rainfall_day,
