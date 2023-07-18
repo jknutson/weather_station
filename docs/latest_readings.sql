@@ -80,7 +80,7 @@ SELECT
 	max((data->'rain_day'->'measurement')::float) AS rainfall_day,
 	max((data->'wind'->'speed_mph')::float) AS wind_speed_avg_mph,
 	max((data->'wind'->'gust_mph')::float) AS wind_speed_gust_mph,
-	mode() WITHIN GROUP (ORDER BY data->'wind'->'direction') AS wind_speed_direction,
+	mode() WITHIN GROUP (ORDER BY data->'wind'->>'direction') AS wind_speed_direction,
     current_timestamp AT TIME ZONE 'cdt' as updated_at
 FROM journal
 WHERE
