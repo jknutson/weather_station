@@ -21,7 +21,7 @@ case $1 in
         echo "select wm_update_hourly_summaries();" | psql > /dev/null
         echo "\copy (select * from wm_readings_24_hours) to ${WORKING_DIR}/last_24_hours.csv csv header;" | psql > /dev/null
         cp "${WORKING_DIR}/last_24_hours.csv" /var/www/html/weatherdata/
-        curl -s -X PUT -d "@./last_24_hours.csv" -H "x-ms-date: $(TZ=GMT date '+%a, %d %h %Y %H:%M:%S %Z')" -H "x-ms-blob-type: BlockBlob" "https://weatherman.blob.core.windows.net/%24web/last_24_hours.csv${SAS_TOKEN}"
+        curl -s -X PUT --data-binary "@./last_24_hours.csv" -H "x-ms-date: $(TZ=GMT date '+%a, %d %h %Y %H:%M:%S %Z')" -H "x-ms-blob-type: BlockBlob" "https://weatherman.blob.core.windows.net/%24web/last_24_hours.csv${SAS_TOKEN}"
         ;;
 
 esac
