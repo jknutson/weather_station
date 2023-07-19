@@ -18,10 +18,13 @@ values we are interested in (temperature and humidity) to an MQTT topic.
 ### Raspberry Pi
 
 The Raspberry Pi connects to the Pico and runs the `pyconsole.py` script to
-collect temperature and humidity readings.
+collect temperature and humidity readings over the COM port.
 
 The Pi also connects to the wind / rain sensors to collect wind and rain
-readings and emits them to an MQTT topic.
+readings.
+
+All readings are sent to an MQTT broker. Readings are largely sent individually
+to different topics, rather than in a single payload to a single topic.
 
 The main repo for the code running on the Raspberry Pi is
 [username/weather_station](https://github.com/username/weather_station)
