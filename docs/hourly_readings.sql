@@ -61,8 +61,8 @@ SELECT
         min(text::float) AS min_temperature,
         max(text::float) AS max_temperature
 FROM journal
-WHERE 
-	topic = 'iot/pico/temperature_avg'
+WHERE
+  (topic = 'iot/pico/temperature_avg' OR  right(topic, 13) = 'temperature_f')
 	AND text::float < 118 AND text::float > -118 -- weed out outliers/erroneous readings
 	AND date_trunc('hour', time::timestamptz AT TIME ZONE 'cdt') = date_trunc('hour', current_timestamp AT TIME ZONE 'cdt' - INTERVAL '1 hour')-- previous hour
 GROUP BY 1,2,3
