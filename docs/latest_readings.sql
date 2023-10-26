@@ -27,12 +27,11 @@ ALTER TABLE IF EXISTS public.wm_latest_readings
 
 -- DROP FUNCTION IF EXISTS public.wm_update_latest_readings();
 
-CREATE OR REPLACE FUNCTION public.wm_update_latest_readings(
-	)
+CREATE OR REPLACE FUNCTION public.wm_update_latest_readings()
     RETURNS void
-    LANGUAGE 'sql'
-    COST 100
-    VOLATILE STRICT PARALLEL UNSAFE
+    LANGUAGE sql
+    COST 100.0
+    VOLATILE STRICT 
 AS $BODY$
 
 
@@ -80,7 +79,7 @@ SELECT
 	max((data->'rain_day'->'measurement')::float) AS rainfall_day,
 	max((data->'wind'->'speed_mph')::float) AS wind_speed_avg_mph,
 	max((data->'wind'->'gust_mph')::float) AS wind_speed_gust_mph,
-	mode() WITHIN GROUP (ORDER BY data->'wind'->'direction') AS wind_speed_direction,
+	mode() WITHIN GROUP (ORDER BY data->'wind'->>'direction') AS wind_speed_direction,
     current_timestamp AT TIME ZONE 'cdt' as updated_at
 FROM journal
 WHERE
@@ -95,6 +94,26 @@ ON CONFLICT(station) DO UPDATE SET
   wind_speed_gust_mph = EXCLUDED.wind_speed_gust_mph,
   wind_speed_direction = EXCLUDED.wind_speed_direction,
   updated_at = EXCLUDED.updated_at;
+
+-- TEMPERATURE (ESP32)
+INSERT INTO wm_latest_readings (station, avg_temperature, updated_at)
+SELECT
+	SPLIT_PART(topic, '/', 2) as station,
+	avg(text::float) AS avg_temperature,
+    current_timestamp AT TIME ZONE 'cdt' as updated_at
+    -- ,current_timestamp AT TIME ZONE 'cdt' - INTERVAL '5 minute' as since
+FROM journal
+WHERE 
+	topic LIKE 'iot/%/temperature_f'
+      OR topic like 'esp32/%/temperature'
+	AND text::float < 118 AND text::float > -118 -- weed out outliers/erroneous readings
+	AND  time::timestamptz AT TIME ZONE 'cdt' >= current_timestamp AT TIME ZONE 'cdt' - INTERVAL '5 minute' -- last 5 minutes
+GROUP BY 1
+ORDER BY 1
+ON CONFLICT(station)
+DO UPDATE
+SET avg_temperature = EXCLUDED.avg_temperature, updated_at = EXCLUDED.updated_at;
+
 
 $BODY$;
 
